@@ -13,6 +13,8 @@ function App() {
     body: '',
   })
 
+  const [updatingPost, setUpdatingPost] = useState({})
+
   const getSinglePost = async (id) => {
     try {
       const { data } = await axios.get(`https://jsonplaceholder.typicode.com/posts/${id}`)
@@ -22,6 +24,36 @@ function App() {
       if (err.response.status === 404) {
         setSinglePostNotFound(true)
       }
+    }
+  }
+
+  const deletePost = async (id) => {
+    try {
+      await axios.delete(`https://jsonplaceholder.typicode.com/posts/${id}`)
+      setPosts(posts.filter(post => post.id !== id))
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  const updatePost = async (id) => {
+    console.log(id)
+    try {
+      await axios.patch(`https://jsonplaceholder.typicode.com/posts/${id}`, updatingPost)
+      alert('Post updated!')
+
+      setPosts(posts.map(post => {
+        if (post.id === id) {
+          post.title = updatingPost.title
+          console.log(post)
+        }
+
+        return post
+      }))
+      setUpdatingPost({})
+
+    } catch (err) {
+      console.log(err)
     }
   }
 
@@ -40,7 +72,6 @@ function App() {
 
     try {
       const { data } = await axios.post('https://jsonplaceholder.typicode.com/posts', newPost)
-      console.log(data)
 
       alert("Post Created")
       setNewPost({
@@ -121,11 +152,39 @@ function App() {
               <div key={post.id}
                 style={{
                   borderBottom: '1px solid #000',
-
+                  paddingBottom: 20,
                 }}
               >
-                <h4>{post.title}</h4>
+                {updatingPost.id === post.id
+                  ? <input
+                    value={updatingPost.title}
+                    onChange={e => setUpdatingPost({ ...updatingPost, title: e.target.value })}
+                  />
+                  : <h4>{post.title}</h4>
+                }
                 <p>{post.body}</p>
+                <div>
+                  {
+                    (updatingPost.id === post.id)
+                      ? <button style={{
+                        marginRight: 10,
+                      }}
+                        onClick={() => updatePost(post.id)}
+                      >
+                        Submit Updating
+                      </button>
+                      : <button style={{
+                        marginRight: 10,
+                      }}
+                        onClick={() => setUpdatingPost(post)}
+                      >
+                        Update
+                      </button>
+                  }
+                  <button
+                    onClick={() => deletePost(post.id)}
+                  >Delete</button>
+                </div>
               </div>
             ))
           }
