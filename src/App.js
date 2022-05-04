@@ -1,36 +1,44 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios'
+
+import { createPostAPI, deletePostAPI, getPostsAPI, getSinglePostAPI, updatePostAPI } from './api/posts';
+
 
 function App() {
   const [posts, setPosts] = useState([])
+  const [postsLoading, setPostsLoading] = useState(true)
 
   const [singlePost, setSinglePost] = useState({})
   const [singlePostId, setSinglePostId] = useState(10)
   const [singlePostNotFound, setSinglePostNotFound] = useState(false)
+  const [singlePostLoading, setSinglePostLoading] = useState(false)
 
   const [newPost, setNewPost] = useState({
     title: '',
     body: '',
   })
+  const [newPostLoading, setNewPostLoading] = useState(false)
 
   const [updatingPost, setUpdatingPost] = useState({})
-
+  const [updatingPostLoading, setUpdatingPostLoading] = useState(false)
 
   const getSinglePost = async (id) => {
+    setSinglePostLoading(true)
     try {
-      const { data } = await axios.get(`https://jsonplaceholder.typicode.com/posts/${id}`)
+      const { data } = await getSinglePostAPI(id);
       setSinglePost(data)
+      setSinglePostLoading(false)
     } catch (err) {
       console.log(err)
       if (err.response.status === 404) {
         setSinglePostNotFound(true)
       }
+      setSinglePostLoading(false)
     }
   }
 
   const deletePost = async (id) => {
     try {
-      await axios.delete(`https://jsonplaceholder.typicode.com/posts/${id}`)
+      await deletePostAPI(id);
       setPosts(posts.filter(post => post.id !== id))
     } catch (err) {
       console.log(err)
@@ -38,8 +46,9 @@ function App() {
   }
 
   const updatePost = async (id) => {
+    setUpdatingPostLoading(true)
     try {
-      await axios.patch(`https://jsonplaceholder.typicode.com/posts/${id}`, updatingPost)
+      await updatePostAPI(id, updatingPost);
       alert('Post updated')
 
       setPosts(posts.map(post => {
@@ -51,36 +60,41 @@ function App() {
       }))
 
       setUpdatingPost({})
+      setUpdatingPostLoading(false)
     } catch (err) {
       console.log(err)
+      setUpdatingPostLoading(false)
     }
   }
 
   const getPosts = async () => {
+    setPostsLoading(true)
     try {
-      const { data } = await axios.get('https://jsonplaceholder.typicode.com/posts')
+      const { data } = await getPostsAPI();
       setPosts(data)
+      setPostsLoading(false)
     } catch (err) {
       console.log(err)
+      setPostsLoading(false)
     }
   }
 
 
   const createPost = async (e) => {
     e.preventDefault()
-
+    setNewPostLoading(true)
     try {
-      const { data } = await axios.post('https://jsonplaceholder.typicode.com/posts', newPost)
-      console.log(data)
+      const { data } = await createPostAPI(newPost);
 
       alert("Post Created")
       setNewPost({
         title: '',
         body: '',
       })
-
+      setNewPostLoading(false)
     } catch (err) {
       console.log(err)
+      setNewPostLoading(false)
     }
   }
 
@@ -92,9 +106,6 @@ function App() {
   useEffect(() => {
     getPosts()
   }, [])
-
-
-  console.log(updatingPost)
 
   return (
     <div
@@ -125,7 +136,9 @@ function App() {
             value={newPost.body}
 
           />
-          <button>Submit</button>
+          <button
+            disabled={newPostLoading}
+          >{!newPostLoading ? 'Submit' : "Loading..."}</button>
         </form>
       </div>
 
@@ -139,17 +152,21 @@ function App() {
           onChange={e => setSinglePostId(e.target.value)}
           value={singlePostId}
         />
-        {!singlePostNotFound ? <div>
-          <h2>{singlePost.title}</h2>
-          <p>{singlePost.body}</p>
+        {!singlePostLoading ? <div>
+          {!singlePostNotFound ? <div>
+            <h2>{singlePost.title}</h2>
+            <p>{singlePost.body}</p>
+          </div> : <div>
+            <h2>Post not found</h2>
+          </div>}
         </div> : <div>
-          <h2>Post not found</h2>
+          Loading...
         </div>}
       </div>
 
       <div>
         <h1>Posts</h1>
-        <div>
+        {!postsLoading ? <div>
           {
             posts.map(post => (
               <div key={post.id}
@@ -173,7 +190,8 @@ function App() {
                         marginRight: 10,
                       }}
                       onClick={() => updatePost(post.id)}
-                    >Submit Update</button>
+                      disabled={updatingPostLoading}
+                    >{!updatingPostLoading ? 'Submit Update' : 'Loading...'}</button>
                     : <button
                       style={{
                         marginRight: 10,
@@ -187,7 +205,9 @@ function App() {
               </div>
             ))
           }
-        </div>
+        </div> : <div>
+          Loading...
+        </div>}
       </div>
     </div>
   );
