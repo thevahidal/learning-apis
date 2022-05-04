@@ -84,7 +84,7 @@ function App() {
     e.preventDefault()
     setNewPostLoading(true)
     try {
-      const { data } = await createPostAPI(newPost);
+      await createPostAPI(newPost);
 
       alert("Post Created")
       setNewPost({
